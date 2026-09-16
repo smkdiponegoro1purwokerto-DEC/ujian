@@ -3,7 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DIPSA CBT - Ujian Online</title>
+  <title>DIPSA EXAM CENTER - Kelas X</title>
+
+  <!-- PUSTAKA MATHJAX V2 (SANGAT STABIL UNTUK DOLAR $ AND LATEX) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        displayMath: [['$$','$$'], ['\\[','\\]']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
   <style>
     /* -------------------------------------------------------------
        1. ISOLASI LAYAR
@@ -36,11 +49,19 @@
     
     .cbt-card { background: #ffffff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 650px; padding: 20px; transition: all 0.3s ease; position: relative; margin: auto; user-select: none; -webkit-user-select: none; }
     .cbt-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eef2f5; padding-bottom: 15px; }
-    .cbt-header h2 { color: #1a73e8; font-size: 22px; }
+    .cbt-header h2 { color: #1a73e8; font-size: 22px; text-transform: uppercase; }
     .cbt-header p { color: #666; font-size: 14px; margin-top: 5px; }
     
-    .mapel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
-    .btn-mapel { background: #1a73e8; color: white; border: none; padding: 18px 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 16px; }
+    .mapel-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+      gap: 12px; 
+      margin-top: 15px; 
+      max-height: 380px; 
+      overflow-y: auto; 
+      padding-right: 5px; 
+    }
+    .btn-mapel { background: #1a73e8; color: white; border: none; padding: 14px 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; text-align: center; }
     .btn-mapel:hover { background: #1557b0; transform: translateY(-2px); }
     
     .form-group { margin-bottom: 15px; text-align: left; }
@@ -164,7 +185,7 @@
 
     .soal-box { text-align: left; margin-bottom: 20px; }
     .soal-no { font-weight: bold; color: #1a73e8; font-size: 16px; margin-bottom: 10px; }
-    .soal-teks { font-size: 15px; line-height: 1.5; margin-bottom: 15px; color: #222; }
+    .soal-teks { font-size: 16px; line-height: 1.6; margin-bottom: 15px; color: #222; }
     .soal-teks img { max-width: 100% !important; height: auto !important; border-radius: 8px; margin: 10px 0; display: block; }
     
     .opsi-container { display: flex; flex-direction: column; gap: 10px; }
@@ -175,7 +196,8 @@
     .opsi-item.selected { background-color: #e8f0fe !important; border-color: #1a73e8 !important; color: #1a73e8; font-weight: bold; box-shadow: 0 0 0 1px #1a73e8; }
     .opsi-label { width: 28px; height: 28px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold; font-size: 13px; flex-shrink: 0; }
     .opsi-item.selected .opsi-label { background: #1a73e8; color: white; }
-    
+    .opsi-teks { font-size: 15px; }
+
     .nav-soal { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
     .btn-nav { padding: 10px 18px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #6c757d; color: white; transition: 0.2s; }
     .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -259,9 +281,60 @@
       color: #1a73e8;
       font-size: 18px;
     }
+
+    /* -------------------------------------------------------------
+       3. KOTAK KAMERA PENGAWAS (FLOATING & DRAGGABLE)
+       ------------------------------------------------------------- */
+    #camera-box {
+      display: none;
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      width: 95px;
+      height: 125px;
+      background: #000;
+      border: 2px solid #1a73e8;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      z-index: 1000000;
+      cursor: grab;
+      touch-action: none;
+    }
+    #camera-box:active {
+      cursor: grabbing;
+    }
+    #webcam-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      pointer-events: none;
+    }
+    .camera-badge {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      font-size: 8px;
+      font-weight: bold;
+      padding: 2px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
+
+  <!-- KOTAK KAMERA FLOATING & DRAGGABLE -->
+  <div id="camera-box">
+    <video id="webcam-preview" autoplay playsinline muted></video>
+    <div class="camera-badge">🔴 RECORDING</div>
+  </div>
 
   <!-- MODAL PERINGATAN PELANGGARAN -->
   <div class="overlay-warning" id="modal-warning">
@@ -272,7 +345,18 @@
     </div>
   </div>
 
-  <!-- MODAL KONFIRMASI SELESAI UJIAN (BARU) -->
+  <!-- MODAL PERINGATAN WAKTU BELUM REACH 60 MENIT -->
+  <div class="overlay-modal" id="modal-waktu-kurang">
+    <div class="warning-card">
+      <h3 style="color: #f59e0b; font-size: 20px; margin-bottom: 10px;">⏳ Waktu Pengerjaan</h3>
+      <p style="font-size: 15px; color: #334155; margin-bottom: 20px; line-height: 1.5; font-weight: 600;">
+        Waktu mengerjakan masih panjang, teliti kembali pekerjaanmu.
+      </p>
+      <button class="btn-submit" style="background: #1a73e8;" onclick="tutupModalWaktuKurang()">Kembali ke Soal</button>
+    </div>
+  </div>
+
+  <!-- MODAL KONFIRMASI SELESAI UJIAN -->
   <div class="overlay-modal" id="modal-konfirmasi-selesai">
     <div class="modal-card">
       <h3 style="color: #1a73e8; font-size: 18px; margin-bottom: 10px;">Konfirmasi Kirim Jawaban</h3>
@@ -316,18 +400,30 @@
   <div id="cbt-app-wrapper">
     <div class="cbt-card">
       
-      <!-- LAYAR 1: PILIH MAPEL -->
+      <!-- LAYAR 1: PILIH MAPEL (15 MAPEL REGULER) -->
       <div class="screen active" id="screen-mapel">
         <div class="cbt-header">
-          <h2>DIPSA CBT - UJIAN ONLINE</h2>
-          <p>Pilih Mata Pelajaran untuk Memulai Ujian</p>
+          <h2>DIPSA EXAM CENTER</h2>
+          <p>Kelas X</p>
+          <p style="font-size: 12px; color: #888; margin-top: 4px;">Pilih Mata Pelajaran untuk Mengerjakan Ujian</p>
         </div>
         <div class="mapel-grid">
           <button class="btn-mapel" onclick="pilihMapel('Latihan')">📖 Latihan</button>
-           <button class="btn-mapel" onclick="pilihMapel('PAI')">📖 PAI</button>
-           <button class="btn-mapel" onclick="pilihMapel('Bahasa Indonesia')">📖 Bahasa Indonesia</button>
-           <button class="btn-mapel" onclick="pilihMapel('Matematika')">📖 Matematika</button>
+          <button class="btn-mapel" onclick="pilihMapel('Bahasa_Indonesia')">📖 Bahasa Indonesia</button>
+          <button class="btn-mapel" onclick="pilihMapel('PAI')">🕌 PAI</button>
+          <button class="btn-mapel" onclick="pilihMapel('Informatika')">💻 Informatika</button>
+          <button class="btn-mapel" onclick="pilihMapel('Matematika')">📐 Matematika</button>
+          <button class="btn-mapel" onclick="pilihMapel('Sejarah')">🏛️ Sejarah</button>
+          <button class="btn-mapel" onclick="pilihMapel('Dasar_DKV')">🎨 Dasar DKV</button>
+          <button class="btn-mapel" onclick="pilihMapel('Dasar_MP')">💼 Dasar MP</button>
+          <button class="btn-mapel" onclick="pilihMapel('Dasar_TSM')">🔧 Dasar TSM</button>
+          <button class="btn-mapel" onclick="pilihMapel('Bahasa_Inggris')">🇬🇧 Bahasa Inggris</button>
+          <button class="btn-mapel" onclick="pilihMapel('Penjasorkes')">⚽ Penjasorkes</button>
+          <button class="btn-mapel" onclick="pilihMapel('Pancasila')">🇮🇩 Pancasila</button>
           <button class="btn-mapel" onclick="pilihMapel('PIPAS')">🔬 PIPAS</button>
+          <button class="btn-mapel" onclick="pilihMapel('Seni_Budaya')">🎭 Seni Budaya</button>
+          <button class="btn-mapel" onclick="pilihMapel('KKA')">🤝 KKA</button>
+          <button class="btn-mapel" onclick="pilihMapel('Basa_Jawa')">🗣️ Basa Jawa</button>
         </div>
         <div class="loading" id="loading-mapel">Memeriksa jadwal ujian...</div>
       </div>
@@ -362,7 +458,7 @@
           </div>
           <button class="btn-submit" id="btn-login-submit" type="submit">Masuk Ujian</button>
         </form>
-        <div class="loading" id="loading-login">Memeriksa akun...</div>
+        <div class="loading" id="loading-login">Memeriksa akun &amp; mengaktifkan pengawas...</div>
         <div class="error-msg" id="err-login"></div>
       </div>
 
@@ -401,7 +497,7 @@
         <div class="header-soal-wrapper">
           <div class="header-soal-top">
             <span class="badge-mapel" id="label-mapel-soal">Mapel</span>
-            <span id="label-user-soal" style="color: #444; font-size: 13px; font-weight: 600; text-align: right;">Siswa</span>
+            <span id="label-user-soal" style="color: #444; font-size: 13px; font-weight: 600; text-align: right; padding-right: 15px;">Siswa</span>
           </div>
           <div class="header-soal-bottom">
             <div class="timer-soal-badge" id="box-timer-soal" style="display:none;">
@@ -471,7 +567,8 @@
   </div>
 
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxvk6M3v3hBsJDQV3fppc8tPxINEK8oHrrhYy_Uu_i8A8eM2LC6rzDu9kX63N7n6Ggf/exec";
+    // URL APPSCRIPT KELAS X
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7IDkbDuKrdwhjvYmi2x5avfx3voNUOaPmFtU3112xeNZ6n61v_abKAmyLxlkIPjvT/exec";
 
     let selectedMapel = "";
     let userData = null;
@@ -485,6 +582,33 @@
     let violationCount = 0;
     let countdownInterval = null;
     let examTimerInterval = null;
+    let cameraStream = null;
+    let wakeLock = null;
+
+    // VARIABEL UNTUK MENCATAT WAKTU MULAI KERJA SOAL
+    let waktuMulaiSoal = null;
+
+    // VARIABEL GLOBAL STATUS KAMERA SISWA
+    let statusKamera = "KAMERA DITOLAK / ERROR";
+
+    /* FITUR PENJAGA LAYAR SUPAYA TETAP NYALA (SCREEN WAKE LOCK) */
+    async function aktifkanWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.log("Wake Lock Error / Tidak Didukung:", err.message);
+      }
+    }
+
+    function matikanWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release().then(() => {
+          wakeLock = null;
+        }).catch(err => console.log("Gagal melepas Wake Lock:", err));
+      }
+    }
 
     function acakArray(array) {
       let currentIndex = array.length, randomIndex;
@@ -517,8 +641,7 @@
 
     function pilihMapel(mapel) {
       selectedMapel = mapel;
-      requestFullscreenMode();
-      document.getElementById("label-mapel-login").innerText = "Ujian: " + mapel.replace('_', ' ');
+      document.getElementById("label-mapel-login").innerText = "Ujian: " + mapel.replace(/_/g, ' ');
       
       document.getElementById("loading-mapel").style.display = "block";
 
@@ -615,9 +738,109 @@
       }
     }
 
+    function exitFullscreenMode() {
+      if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(err => console.log("Exit Fullscreen error:", err));
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+      }
+    }
+
+    /* FUNGSI MENGAKTIFKAN KAMERA DEPAN */
+    function aktifkanKameraDepan() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false
+        })
+        .then(stream => {
+          cameraStream = stream;
+          const videoEl = document.getElementById("webcam-preview");
+          videoEl.srcObject = stream;
+          document.getElementById("camera-box").style.display = "block";
+          inisiatorDragKamera();
+          
+          // UPDATE STATUS KAMERA JIKA USER MEMBERIKAN IZIN
+          statusKamera = "KAMERA AKTIF (ON)";
+        })
+        .catch(err => {
+          console.warn("Izin kamera ditolak atau perangkat tidak mendukung kamera:", err);
+          statusKamera = "KAMERA DITOLAK / ERROR";
+        });
+      } else {
+        statusKamera = "TIDAK DUKUNG KAMERA";
+      }
+    }
+
+    /* LOGIKA FITUR DRAG / GESER KAMERA (TOUCH & MOUSE) */
+    function inisiatorDragKamera() {
+      const camBox = document.getElementById("camera-box");
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+
+      const onStart = (e) => {
+        isDragging = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        startX = clientX;
+        startY = clientY;
+        
+        const rect = camBox.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+      };
+
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        let newLeft = initialLeft + deltaX;
+        let newTop = initialTop + deltaY;
+
+        const maxLeft = window.innerWidth - camBox.offsetWidth;
+        const maxTop = window.innerHeight - camBox.offsetHeight;
+
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        camBox.style.left = newLeft + "px";
+        camBox.style.top = newTop + "px";
+        camBox.style.right = "auto";
+      };
+
+      const onEnd = () => {
+        isDragging = false;
+      };
+
+      camBox.addEventListener("mousedown", onStart);
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onEnd);
+
+      camBox.addEventListener("touchstart", onStart, { passive: true });
+      document.addEventListener("touchmove", onMove, { passive: true });
+      document.addEventListener("touchend", onEnd);
+    }
+
+    /* FUNGSI MEMATIKAN KAMERA */
+    function matikanKamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      document.getElementById("camera-box").style.display = "none";
+    }
+
     function prosesLogin(e) {
       e.preventDefault();
-      requestFullscreenMode();
       
       const userVal = document.getElementById("username").value.trim();
       const passVal = document.getElementById("password").value.trim();
@@ -632,13 +855,15 @@
           if (data.status === "success") {
             userData = data.user;
             
+            aktifkanKameraDepan();
+
             document.getElementById("val-nama").innerText = ": " + userData.nama;
             document.getElementById("val-kelas").innerText = ": " + userData.kelas;
             document.getElementById("val-nis").innerText = ": " + userData.nis + " / " + userData.nisn;
             document.getElementById("val-ttl").innerText = ": " + userData.ttl;
             document.getElementById("val-durasi").innerText = ": " + (durasiMenitMapel > 0 ? durasiMenitMapel + " Menit" : "Tidak Dibatasi");
             
-            document.getElementById("label-mapel-token").innerText = "Ujian: " + selectedMapel.replace('_', ' ');
+            document.getElementById("label-mapel-token").innerText = "Ujian: " + selectedMapel.replace(/_/g, ' ');
             switchScreen("screen-token");
           } else {
             document.getElementById("err-login").innerText = data.message;
@@ -652,25 +877,43 @@
 
     function prosesToken(e) {
       e.preventDefault();
-      requestFullscreenMode();
+
+      const btnStart = document.getElementById("btn-start-exam");
+      if (btnStart.disabled) return; 
 
       const tokenVal = document.getElementById("token-input").value.trim();
       document.getElementById("loading-token").style.display = "block";
       document.getElementById("err-token").innerText = "";
 
-      fetch(`${WEB_APP_URL}?action=getSoal&mapel=${encodeURIComponent(selectedMapel)}&token=${encodeURIComponent(tokenVal)}`)
+      btnStart.disabled = true;
+
+      const urlFetch = `${WEB_APP_URL}?action=getSoal` +
+        `&mapel=${encodeURIComponent(selectedMapel)}` +
+        `&token=${encodeURIComponent(tokenVal)}` +
+        `&nama=${encodeURIComponent(userData ? userData.nama : '')}` +
+        `&kelas=${encodeURIComponent(userData ? userData.kelas : '')}` +
+        `&ruang=${encodeURIComponent(userData ? userData.ruang || '-' : '-')}` +
+        `&kamera=${encodeURIComponent(statusKamera)}`;
+
+      fetch(urlFetch)
         .then(res => res.json())
         .then(data => {
           document.getElementById("loading-token").style.display = "none";
           if (data.status === "success") {
             listSoalData = acakArray(data.soal);
             if (data.durasi) durasiMenitMapel = data.durasi;
+            
+            requestFullscreenMode();
+            aktifkanWakeLock();
+
             mulaiMengerjakanSoal();
           } else {
+            btnStart.disabled = false;
             document.getElementById("err-token").innerText = data.message;
           }
         })
         .catch(err => {
+          btnStart.disabled = false;
           document.getElementById("loading-token").style.display = "none";
           document.getElementById("err-token").innerText = "Gagal memuat soal!";
         });
@@ -679,8 +922,9 @@
     function mulaiMengerjakanSoal() {
       isExamActive = true;
       currentIndex = 0;
+      waktuMulaiSoal = new Date().getTime(); // CATAT WAKTU PERSIS SAAT MEMULAI SOAL
       
-      document.getElementById("label-mapel-soal").innerText = selectedMapel.replace('_', ' ');
+      document.getElementById("label-mapel-soal").innerText = selectedMapel.replace(/_/g, ' ');
       document.getElementById("label-user-soal").innerText = userData.nama + " (" + userData.kelas + ")";
       
       switchScreen("screen-soal");
@@ -721,6 +965,11 @@
       }, 1000);
     }
 
+    function bersihkanTeks(str) {
+      if (!str) return "";
+      return str.toString();
+    }
+
     function tampilkanSoal(index) {
       const item = listSoalData[index];
       if (!item) return;
@@ -728,13 +977,13 @@
       const noTampil = index + 1;
       
       document.getElementById("display-no-soal").innerText = "Soal No. " + noTampil + " dari " + listSoalData.length;
-      document.getElementById("display-teks-soal").innerHTML = item.soal;
+      document.getElementById("display-teks-soal").innerHTML = bersihkanTeks(item.soal);
       
-      document.getElementById("teks-opsi-A").innerHTML = item.opsiA !== undefined ? item.opsiA : "";
-      document.getElementById("teks-opsi-B").innerHTML = item.opsiB !== undefined ? item.opsiB : "";
-      document.getElementById("teks-opsi-C").innerHTML = item.opsiC !== undefined ? item.opsiC : "";
-      document.getElementById("teks-opsi-D").innerHTML = item.opsiD !== undefined ? item.opsiD : "";
-      document.getElementById("teks-opsi-E").innerHTML = item.opsiE !== undefined ? item.opsiE : "";
+      document.getElementById("teks-opsi-A").innerHTML = bersihkanTeks(item.opsiA);
+      document.getElementById("teks-opsi-B").innerHTML = bersihkanTeks(item.opsiB);
+      document.getElementById("teks-opsi-C").innerHTML = bersihkanTeks(item.opsiC);
+      document.getElementById("teks-opsi-D").innerHTML = bersihkanTeks(item.opsiD);
+      document.getElementById("teks-opsi-E").innerHTML = bersihkanTeks(item.opsiE);
       
       if (item.opsiE === undefined || item.opsiE === null || item.opsiE.toString().trim() === "") {
         document.getElementById("opsi-E").style.display = "none";
@@ -766,6 +1015,13 @@
         btnNext.style.display = "inline-block";
         btnFinish.style.display = "none";
       }
+
+      // RE-RENDER MATHJAX V2 DENGAN JEDA WAKTU SECARA PASTI
+      setTimeout(() => {
+        if (window.MathJax && window.MathJax.Hub) {
+          MathJax.Hub.Queue(["Typeset", MathJax.Hub, "cbt-app-wrapper"]);
+        }
+      }, 150);
     }
 
     function refreshTampilanSoal() {
@@ -830,11 +1086,22 @@
       document.getElementById("modal-grid-soal").style.display = "none";
     }
 
-    /* MUNCULKAN POP-UP MODAL SELESAI UJIAN AMAN DARI BLUR/FULLSCREEN */
+    /* MODIFIKASI: CEK DURASI MINIMAL 60 MENIT */
     function bukaModalKonfirmasiSelesai() {
       isConfirming = true;
-      let terjawab = 0;
 
+      // HITUNG DURASI PENGERJAAN DALAM MENIT
+      const waktuSekarang = new Date().getTime();
+      const durasiBerjalanMenit = (waktuSekarang - waktuMulaiSoal) / (1000 * 60);
+
+      // JIKA KURANG DARI 60 MENIT, TAMPILKAN POPUP SIKAP DAN CEGAH SUBMIT
+      if (durasiBerjalanMenit < 60) {
+        document.getElementById("modal-waktu-kurang").style.display = "flex";
+        return;
+      }
+
+      // JIKA SUDAH >= 60 MENIT, LANJUTKAN KE MODAL VERIFIKASI SELESAI
+      let terjawab = 0;
       listSoalData.forEach((item, idx) => {
         const idSoalAsli = item.no || (idx + 1);
         if (jawabanSiswa[idSoalAsli]) terjawab++;
@@ -851,6 +1118,12 @@
       }
 
       document.getElementById("modal-konfirmasi-selesai").style.display = "flex";
+    }
+
+    function tutupModalWaktuKurang() {
+      document.getElementById("modal-waktu-kurang").style.display = "none";
+      isConfirming = false;
+      requestFullscreenMode();
     }
 
     function batalKirimUjian() {
@@ -874,6 +1147,8 @@
       document.addEventListener("visibilitychange", function() {
         if (document.hidden) {
           eksekusiCekPelanggaran();
+        } else if (isExamActive) {
+          aktifkanWakeLock();
         }
       });
     }
@@ -931,8 +1206,8 @@
       })
       .then(() => {
         document.getElementById("loading-submit").style.display = "none";
+        matikanKamera();
         switchScreen("screen-selesai");
-        if (document.exitFullscreen) document.exitFullscreen();
       })
       .catch(err => {
         if (retryCount < 5) {
@@ -951,6 +1226,10 @@
       if (countdownInterval) clearInterval(countdownInterval);
       if (examTimerInterval) clearInterval(examTimerInterval);
       
+      matikanKamera();
+      matikanWakeLock();
+      exitFullscreenMode();
+
       selectedMapel = "";
       userData = null;
       listSoalData = [];
@@ -960,6 +1239,8 @@
       isExamActive = false;
       isConfirming = false;
       violationCount = 0;
+      waktuMulaiSoal = null;
+      statusKamera = "KAMERA DITOLAK / ERROR";
 
       bukaFormLogin();
 
@@ -969,6 +1250,7 @@
 
       document.getElementById("form-login").reset();
       document.getElementById("form-token").reset();
+      document.getElementById("btn-start-exam").disabled = false;
       document.getElementById("err-login").innerText = "";
       document.getElementById("err-token").innerText = "";
 
