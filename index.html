@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DIPSA EXAM CENTER - Kelas X</title>
 
-  <!-- PUSTAKA MATHJAX V2 (SANGAT STABIL UNTUK DOLAR $ AND LATEX) -->
+  <!-- PUSTAKA MATHJAX V2 (STABIL UNTUK SIMBOL MATEMATIKA & LATEX) -->
   <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
       tex2jax: {
@@ -345,17 +345,6 @@
     </div>
   </div>
 
-  <!-- MODAL PERINGATAN WAKTU BELUM REACH 60 MENIT -->
-  <div class="overlay-modal" id="modal-waktu-kurang">
-    <div class="warning-card">
-      <h3 style="color: #f59e0b; font-size: 20px; margin-bottom: 10px;">⏳ Waktu Pengerjaan</h3>
-      <p style="font-size: 15px; color: #334155; margin-bottom: 20px; line-height: 1.5; font-weight: 600;">
-        Waktu mengerjakan masih panjang, teliti kembali pekerjaanmu.
-      </p>
-      <button class="btn-submit" style="background: #1a73e8;" onclick="tutupModalWaktuKurang()">Kembali ke Soal</button>
-    </div>
-  </div>
-
   <!-- MODAL KONFIRMASI SELESAI UJIAN -->
   <div class="overlay-modal" id="modal-konfirmasi-selesai">
     <div class="modal-card">
@@ -408,7 +397,6 @@
           <p style="font-size: 12px; color: #888; margin-top: 4px;">Pilih Mata Pelajaran untuk Mengerjakan Ujian</p>
         </div>
         <div class="mapel-grid">
-          <button class="btn-mapel" onclick="pilihMapel('Latihan')">📖 Latihan</button>
           <button class="btn-mapel" onclick="pilihMapel('Bahasa_Indonesia')">📖 Bahasa Indonesia</button>
           <button class="btn-mapel" onclick="pilihMapel('PAI')">🕌 PAI</button>
           <button class="btn-mapel" onclick="pilihMapel('Informatika')">💻 Informatika</button>
@@ -567,8 +555,8 @@
   </div>
 
   <script>
-    // URL APPSCRIPT KELAS X
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7IDkbDuKrdwhjvYmi2x5avfx3voNUOaPmFtU3112xeNZ6n61v_abKAmyLxlkIPjvT/exec";
+    // URL APPSCRIPT TERBARU KELAS X
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyzA73250_eeBRrLhouW1UelNiNGpOKwVbfmG7niDyj65jQw71xCguOeuBvZR06tHxqYA/exec";
 
     let selectedMapel = "";
     let userData = null;
@@ -584,9 +572,6 @@
     let examTimerInterval = null;
     let cameraStream = null;
     let wakeLock = null;
-
-    // VARIABEL UNTUK MENCATAT WAKTU MULAI KERJA SOAL
-    let waktuMulaiSoal = null;
 
     // VARIABEL GLOBAL STATUS KAMERA SISWA
     let statusKamera = "KAMERA DITOLAK / ERROR";
@@ -879,14 +864,17 @@
       e.preventDefault();
 
       const btnStart = document.getElementById("btn-start-exam");
+      // CEK JIKA TOMBOL SUDAH DIKLIK, CEGAH KLIK KEDUA (DOUBLE CLICK PROTECTION)
       if (btnStart.disabled) return; 
 
       const tokenVal = document.getElementById("token-input").value.trim();
       document.getElementById("loading-token").style.display = "block";
       document.getElementById("err-token").innerText = "";
 
+      // NONAKTIFKAN TOMBOL SEMENTARA WAKTU MEMPROSES REQUEST
       btnStart.disabled = true;
 
+      // MENGIRIM PARAMETER LENGKAP TERMASUK NAMA, KELAS, RUANG, & STATUS KAMERA UNTUK LOG MONITORING
       const urlFetch = `${WEB_APP_URL}?action=getSoal` +
         `&mapel=${encodeURIComponent(selectedMapel)}` +
         `&token=${encodeURIComponent(tokenVal)}` +
@@ -903,16 +891,19 @@
             listSoalData = acakArray(data.soal);
             if (data.durasi) durasiMenitMapel = data.durasi;
             
+            // AKTIFKAN FULLSCREEN & WAKE LOCK TEPAT SAAT TOKEN DITERIMA VALID
             requestFullscreenMode();
             aktifkanWakeLock();
 
             mulaiMengerjakanSoal();
           } else {
+            // JIKA TOKEN SALAH, BUKA KEMBALI KUNCI TOMBOL
             btnStart.disabled = false;
             document.getElementById("err-token").innerText = data.message;
           }
         })
         .catch(err => {
+          // JIKA ERROR KONEKSI, BUKA KEMBALI KUNCI TOMBOL
           btnStart.disabled = false;
           document.getElementById("loading-token").style.display = "none";
           document.getElementById("err-token").innerText = "Gagal memuat soal!";
@@ -922,7 +913,6 @@
     function mulaiMengerjakanSoal() {
       isExamActive = true;
       currentIndex = 0;
-      waktuMulaiSoal = new Date().getTime(); // CATAT WAKTU PERSIS SAAT MEMULAI SOAL
       
       document.getElementById("label-mapel-soal").innerText = selectedMapel.replace(/_/g, ' ');
       document.getElementById("label-user-soal").innerText = userData.nama + " (" + userData.kelas + ")";
@@ -1086,22 +1076,10 @@
       document.getElementById("modal-grid-soal").style.display = "none";
     }
 
-    /* MODIFIKASI: CEK DURASI MINIMAL 60 MENIT */
     function bukaModalKonfirmasiSelesai() {
       isConfirming = true;
-
-      // HITUNG DURASI PENGERJAAN DALAM MENIT
-      const waktuSekarang = new Date().getTime();
-      const durasiBerjalanMenit = (waktuSekarang - waktuMulaiSoal) / (1000 * 60);
-
-      // JIKA KURANG DARI 60 MENIT, TAMPILKAN POPUP SIKAP DAN CEGAH SUBMIT
-      if (durasiBerjalanMenit < 60) {
-        document.getElementById("modal-waktu-kurang").style.display = "flex";
-        return;
-      }
-
-      // JIKA SUDAH >= 60 MENIT, LANJUTKAN KE MODAL VERIFIKASI SELESAI
       let terjawab = 0;
+
       listSoalData.forEach((item, idx) => {
         const idSoalAsli = item.no || (idx + 1);
         if (jawabanSiswa[idSoalAsli]) terjawab++;
@@ -1118,12 +1096,6 @@
       }
 
       document.getElementById("modal-konfirmasi-selesai").style.display = "flex";
-    }
-
-    function tutupModalWaktuKurang() {
-      document.getElementById("modal-waktu-kurang").style.display = "none";
-      isConfirming = false;
-      requestFullscreenMode();
     }
 
     function batalKirimUjian() {
@@ -1239,7 +1211,6 @@
       isExamActive = false;
       isConfirming = false;
       violationCount = 0;
-      waktuMulaiSoal = null;
       statusKamera = "KAMERA DITOLAK / ERROR";
 
       bukaFormLogin();
